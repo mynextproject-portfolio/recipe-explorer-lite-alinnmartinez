@@ -10,12 +10,24 @@ router = APIRouter(prefix="/api")
 
 @router.get("/recipes")
 def get_recipes(search: Optional[str] = None):
-    """Get all recipes or search by title"""
+    """Get all recipes or search by title and ingredients"""
     # TODO: Add pagination when we have more than 100 recipes
+    recipes = recipe_storage.get_all_recipes()
+    
     if search:
-        recipes = recipe_storage.search_recipes(search)
-    else:
-        recipes = recipe_storage.get_all_recipes()
+        # Use the same search logic as /recipes/search
+        terms = search.lower().strip().split()
+        filtered = []
+
+        for recipe in recipes:
+            haystack = " ".join(
+                [recipe.title] + recipe.ingredients
+            ).lower()
+
+            if all(term in haystack for term in terms):
+                filtered.append(recipe)
+
+        recipes = filtered
     
     # Log for debugging (remove in production)
     print(f"Returning {len(recipes)} recipes")
@@ -23,38 +35,36 @@ def get_recipes(search: Optional[str] = None):
     return {"recipes": recipes}
 
 
-@router.get("/recipes/{recipe_id}")
-def get_recipe(recipe_id: str):
-    """Get a specific recipe by ID"""
-    recipe = recipe_storage.get_recipe(recipe_id)
-    if not recipe:
-        raise HTTPException(status_code=404, detail="Recipe not found")
-    return recipe
+@router.get("/recipes/search")
+def search_recipes(query: Optional[str] = None):  # Changed from 'search' to 'query'
+    """Search recipes by query parameter"""
+    recipes = recipe_storage.get_all_recipes()
+
+    if query:  # Changed from 'search' to 'query'
+        terms = query.lower().strip().split()
+        filtered = []
+
+        for recipe in recipes:
+            haystack = " ".join(
+                [recipe.title] + recipe.ingredients
+            ).lower()
+
+            if all(term in haystack for term in terms):
+                filtered.append(recipe)
+
+        recipes = filtered
+
+    print(f"Returning {len(recipes)} recipes")
+    return {"recipes": recipes}
 
 
-@router.post("/recipes")
-def create_recipe(recipe: RecipeCreate):
-    """Create a new recipe"""
-    new_recipe = recipe_storage.create_recipe(recipe)
-    return new_recipe
-
-
-@router.put("/recipes/{recipe_id}")
-def update_recipe(recipe_id: str, recipe: RecipeUpdate):
-    """Update an existing recipe"""
-    updated_recipe = recipe_storage.update_recipe(recipe_id, recipe)
-    if not updated_recipe:
-        raise HTTPException(status_code=404, detail="Recipe not found")
-    return updated_recipe
-
-
-@router.delete("/recipes/{recipe_id}")
-def delete_recipe(recipe_id: str):
-    """Delete a recipe"""
-    success = recipe_storage.delete_recipe(recipe_id)
-    if not success:
-        return {"error": "Recipe not found", "status": "failed"}
-    return {"message": "Recipe deleted successfully", "status": "success"}  # Added status field inconsistently
+@router.get("/recipes/export")
+def export_recipes():
+    """Export all recipes as JSON"""
+    recipes = recipe_storage.get_all_recipes()
+    # Convert to dict for JSON serialization
+    recipes_dict = [recipe.model_dump() for recipe in recipes]  # Changed from .dict() to .model_dump()
+    return JSONResponse(content=recipes_dict)
 
 
 @router.post("/recipes/import")
@@ -91,10 +101,35 @@ async def import_recipes(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
 
 
-@router.get("/recipes/export")
-def export_recipes():
-    """Export all recipes as JSON"""
-    recipes = recipe_storage.get_all_recipes()
-    # Convert to dict for JSON serialization
-    recipes_dict = [recipe.dict() for recipe in recipes]
-    return JSONResponse(content=recipes_dict)
+@router.get("/recipes/{recipe_id}")
+def get_recipe(recipe_id: str):
+    """Get a specific recipe by ID"""
+    recipe = recipe_storage.get_recipe(recipe_id)
+    if not recipe:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    return recipe
+
+
+@router.post("/recipes")
+def create_recipe(recipe: RecipeCreate):
+    """Create a new recipe"""
+    new_recipe = recipe_storage.create_recipe(recipe)
+    return new_recipe
+
+
+@router.put("/recipes/{recipe_id}")
+def update_recipe(recipe_id: str, recipe: RecipeUpdate):
+    """Update an existing recipe"""
+    updated_recipe = recipe_storage.update_recipe(recipe_id, recipe)
+    if not updated_recipe:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    return updated_recipe
+
+
+@router.delete("/recipes/{recipe_id}")
+def delete_recipe(recipe_id: str):
+    """Delete a recipe"""
+    success = recipe_storage.delete_recipe(recipe_id)
+    if not success:
+        return {"error": "Recipe not found", "status": "failed"}
+    return {"message": "Recipe deleted successfully", "status": "success"}  # Added status field inconsistently
