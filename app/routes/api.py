@@ -7,30 +7,43 @@ from app.services.storage import recipe_storage
 
 router = APIRouter(prefix="/api")
 
+# Debug on module load
+print(f"API module loaded. Storage instance ID: {id(recipe_storage)}")
+print(f"Storage has {len(recipe_storage.recipes)} recipes on load")
+
 
 @router.get("/recipes")
 def get_recipes(search: Optional[str] = None):
-    """Get all recipes or search by title and ingredients"""
+    """Get all recipes or search by title, ingredients, and cuisine"""
     # TODO: Add pagination when we have more than 100 recipes
+    print(f"DEBUG: get_recipes called with search='{search}'")
+    print(f"DEBUG: Storage instance ID: {id(recipe_storage)}")
+    print(f"DEBUG: Storage has {len(recipe_storage.recipes)} recipes in storage")
+    print(f"DEBUG: Storage keys: {list(recipe_storage.recipes.keys())}")
+    
     recipes = recipe_storage.get_all_recipes()
+    print(f"DEBUG: get_all_recipes() returned {len(recipes)} recipes")
     
     if search:
+        print(f"DEBUG: Applying search filter for '{search}'")
         # Use the same search logic as /recipes/search
         terms = search.lower().strip().split()
         filtered = []
 
         for recipe in recipes:
+            # Include cuisine in search haystack
             haystack = " ".join(
-                [recipe.title] + recipe.ingredients
+                [recipe.title, recipe.cuisine] + recipe.ingredients
             ).lower()
 
             if all(term in haystack for term in terms):
                 filtered.append(recipe)
 
         recipes = filtered
+        print(f"DEBUG: After search filter: {len(recipes)} recipes")
     
     # Log for debugging (remove in production)
-    print(f"Returning {len(recipes)} recipes")
+    print(f"DEBUG: Returning {len(recipes)} recipes")
     
     return {"recipes": recipes}
 
@@ -45,8 +58,9 @@ def search_recipes(query: Optional[str] = None):  # Changed from 'search' to 'qu
         filtered = []
 
         for recipe in recipes:
+            # Include cuisine in search haystack
             haystack = " ".join(
-                [recipe.title] + recipe.ingredients
+                [recipe.title, recipe.cuisine] + recipe.ingredients
             ).lower()
 
             if all(term in haystack for term in terms):
@@ -69,36 +83,28 @@ def export_recipes():
 
 @router.post("/recipes/import")
 async def import_recipes(file: UploadFile = File(...)):
-    """Import recipes from JSON file - this method does too much"""
+    """Import recipes from JSON file"""
     try:
-        # Read file
         content = await file.read()
-        
-        # Check file size
-        if len(content) > 1000000:  # 1MB limit
-            return {"error": "File too large"}
-        
-        # Parse JSON
         recipes_data = json.loads(content)
         
-        # Validate it's a list
-        if not isinstance(recipes_data, list):
-            raise HTTPException(status_code=400, detail="JSON must be an array of recipes")
+        print(f"DEBUG: Import - Storage instance ID: {id(recipe_storage)}")
+        print(f"DEBUG: Importing {len(recipes_data)} recipes from {file.filename}")
         
-        # Log the import (should use proper logging)
-        print(f"Importing {len(recipes_data)} recipes from {file.filename}")
-        
-        # Actually import
+        # Use the storage service's import method instead of direct assignment
         count = recipe_storage.import_recipes(recipes_data)
         
-        # Different success response format
+        print(f"DEBUG: Successfully imported {count} recipes")
+        print(f"DEBUG: Total recipes in storage: {len(recipe_storage.recipes)}")
+        print(f"DEBUG: Storage keys after import: {list(recipe_storage.recipes.keys())}")
+        
         return {"message": f"Successfully imported {count} recipes", "count": count}
     
-    except json.JSONDecodeError as e:
-        print(f"JSON error: {e}")
-        raise HTTPException(status_code=400, detail="Invalid JSON format")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON file")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+        print(f"DEBUG: Import failed with error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Import failed: {str(e)}")
 
 
 @router.get("/recipes/{recipe_id}")
