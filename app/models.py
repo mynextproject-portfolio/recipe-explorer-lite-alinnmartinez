@@ -2,48 +2,35 @@ from pydantic import BaseModel, Field, ConfigDict  # Add Field to imports
 import uuid
 from datetime import datetime
 from typing import List, Optional
-from enum import Enum
-
-# Constants
-MAX_TITLE_LENGTH = 200
-MAX_INGREDIENTS = 50
-
-class DifficultyLevel(str, Enum):
-    EASY = "Easy"
-    MEDIUM = "Medium" 
-    HARD = "Hard"
 
 class Recipe(BaseModel):
-    model_config = ConfigDict(
-        # Remove or fix the json_encoders if they exist
-        # json_encoders should be a dict mapping types to functions, like:
-        # json_encoders = {datetime: str}
-    )
+    model_config = ConfigDict()
     
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    title: str 
+    title: str
     description: str
     ingredients: List[str]
-    instructions: str
-    tags: List[str] = Field(default_factory=list)
-    difficulty: DifficultyLevel
+    instructions: List[str]  # Changed from str to List[str]
+    cuisine: str  # New field for cuisine/region
+    tags: List[str]
+    difficulty: str
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
-
 
 class RecipeCreate(BaseModel):
     title: str
     description: str
     ingredients: List[str]
-    instructions: str
-    tags: List[str] = Field(default_factory=list)
-    difficulty: DifficultyLevel
-
+    instructions: List[str]  # Changed from str to List[str]
+    cuisine: str  # New field for cuisine/region
+    tags: List[str]
+    difficulty: str
 
 class RecipeUpdate(BaseModel):
-    title: str
-    description: str
-    ingredients: List[str]
-    instructions: str
-    tags: List[str]
-    difficulty: DifficultyLevel
+    title: Optional[str] = None
+    description: Optional[str] = None
+    ingredients: Optional[List[str]] = None
+    instructions: Optional[List[str]] = None  # Changed from str to List[str]
+    cuisine: Optional[str] = None  # New field for cuisine/region
+    tags: Optional[List[str]] = None
+    difficulty: Optional[str] = None

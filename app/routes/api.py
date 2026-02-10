@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api")
 
 @router.get("/recipes")
 def get_recipes(search: Optional[str] = None):
-    """Get all recipes or search by title and ingredients"""
+    """Get all recipes or search by title, ingredients, and cuisine"""
     # TODO: Add pagination when we have more than 100 recipes
     recipes = recipe_storage.get_all_recipes()
     
@@ -20,8 +20,9 @@ def get_recipes(search: Optional[str] = None):
         filtered = []
 
         for recipe in recipes:
+            # Include cuisine in search haystack
             haystack = " ".join(
-                [recipe.title] + recipe.ingredients
+                [recipe.title, recipe.cuisine] + recipe.ingredients
             ).lower()
 
             if all(term in haystack for term in terms):
@@ -45,8 +46,9 @@ def search_recipes(query: Optional[str] = None):  # Changed from 'search' to 'qu
         filtered = []
 
         for recipe in recipes:
+            # Include cuisine in search haystack
             haystack = " ".join(
-                [recipe.title] + recipe.ingredients
+                [recipe.title, recipe.cuisine] + recipe.ingredients
             ).lower()
 
             if all(term in haystack for term in terms):
