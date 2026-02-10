@@ -7,13 +7,19 @@ from app.services.storage import recipe_storage
 
 router = APIRouter(prefix="/api")
 
+# Debug on module load
+print(f"API module loaded. Storage instance ID: {id(recipe_storage)}")
+print(f"Storage has {len(recipe_storage.recipes)} recipes on load")
+
 
 @router.get("/recipes")
 def get_recipes(search: Optional[str] = None):
     """Get all recipes or search by title, ingredients, and cuisine"""
     # TODO: Add pagination when we have more than 100 recipes
     print(f"DEBUG: get_recipes called with search='{search}'")
+    print(f"DEBUG: Storage instance ID: {id(recipe_storage)}")
     print(f"DEBUG: Storage has {len(recipe_storage.recipes)} recipes in storage")
+    print(f"DEBUG: Storage keys: {list(recipe_storage.recipes.keys())}")
     
     recipes = recipe_storage.get_all_recipes()
     print(f"DEBUG: get_all_recipes() returned {len(recipes)} recipes")
@@ -82,6 +88,7 @@ async def import_recipes(file: UploadFile = File(...)):
         content = await file.read()
         recipes_data = json.loads(content)
         
+        print(f"DEBUG: Import - Storage instance ID: {id(recipe_storage)}")
         print(f"DEBUG: Importing {len(recipes_data)} recipes from {file.filename}")
         
         # Use the storage service's import method instead of direct assignment
@@ -89,6 +96,7 @@ async def import_recipes(file: UploadFile = File(...)):
         
         print(f"DEBUG: Successfully imported {count} recipes")
         print(f"DEBUG: Total recipes in storage: {len(recipe_storage.recipes)}")
+        print(f"DEBUG: Storage keys after import: {list(recipe_storage.recipes.keys())}")
         
         return {"message": f"Successfully imported {count} recipes", "count": count}
     

@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, ConfigDict  # Add Field to imports
-import uuid
+from pydantic import BaseModel, Field, ConfigDict
+import uuid  # Add this import
 from datetime import datetime
 from typing import List, Optional
 
