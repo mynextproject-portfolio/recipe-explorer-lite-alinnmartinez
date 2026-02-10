@@ -11,7 +11,10 @@ class RecipeStorage:
         self.recipes: Dict[str, Recipe] = {}
     
     def get_all_recipes(self) -> List[Recipe]:
-        return list(self.recipes.values())
+        print(f"DEBUG: get_all_recipes called, storage has {len(self.recipes)} recipes")
+        result = list(self.recipes.values())
+        print(f"DEBUG: Converting to list returned {len(result)} recipes")
+        return result
     
     def get_recipe(self, recipe_id: str) -> Optional[Recipe]:
         return self.recipes.get(recipe_id)
