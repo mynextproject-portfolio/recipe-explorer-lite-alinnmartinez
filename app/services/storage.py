@@ -9,6 +9,32 @@ recipe_view_count = {}
 class RecipeStorage:
     def __init__(self):
         self.recipes: Dict[str, Recipe] = {}
+        # Load seed data on startup
+        self._load_seed_data()
+    
+    def _load_seed_data(self):
+        """Load initial seed data for testing"""
+        seed_recipes = [
+            {
+                "id": "test-recipe-001",
+                "title": "Test Recipe",
+                "description": "A simple test recipe",
+                "ingredients": ["test ingredient 1", "test ingredient 2"],
+                "instructions": ["Step 1: Test step", "Step 2: Another test step"],
+                "cuisine": "International",
+                "tags": ["test"],
+                "difficulty": "Easy",
+                "created_at": "2024-01-01T00:00:00",
+                "updated_at": "2024-01-01T00:00:00"
+            }
+        ]
+        
+        for recipe_dict in seed_recipes:
+            try:
+                recipe = Recipe(**recipe_dict)
+                self.recipes[recipe.id] = recipe
+            except Exception as e:
+                print(f"Failed to load seed recipe: {e}")
     
     def get_all_recipes(self) -> List[Recipe]:
         print(f"DEBUG: get_all_recipes called, storage has {len(self.recipes)} recipes")
